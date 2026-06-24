@@ -1,0 +1,32 @@
+build/
+
+# CMake and other local build directories
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# Emscripten outputs
+*.wasm
+*.data
+*.js.mem
+*.map
+
+# Generic native build artifacts
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.exe
+
+# IDE local configuration
+.vscode/c_cpp_properties.json
+.vs/
+
+# OS/editor temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log

@@ -1,0 +1,16 @@
+{
+  "files.associations": {
+    "project.json": "jsonc",
+    "cmath": "cpp",
+    "limits": "cpp",
+    "type_traits": "cpp",
+    "typeinfo": "cpp",
+    "climits": "cpp",
+    "cstdio": "cpp",
+    "cstdlib": "cpp",
+    "new": "cpp",
+    "bit": "cpp",
+    "compare": "cpp",
+    "concepts": "cpp"
+  }
+}
