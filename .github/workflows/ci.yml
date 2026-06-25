@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  native-and-release-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Native tests
+        run: make test
+
+      - name: Dry-run web builds
+        run: |
+          make -n counter DEV=1
+          make -n minimal DEV=1
+
+      - name: Version target
+        run: make version

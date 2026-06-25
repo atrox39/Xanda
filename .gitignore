@@ -24,6 +24,7 @@ compile_commands.json
 # IDE local configuration
 .vscode/c_cpp_properties.json
 .vs/
+tools/dev-server/node_modules/
 
 # OS/editor temporary files
 .DS_Store
