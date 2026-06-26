@@ -1,0 +1,6 @@
+@use "../../shared/styles/xanda";
+@use "./tokens";
+
+:root[data-app="counter"] .counter-card {
+  max-width: 34rem;
+}

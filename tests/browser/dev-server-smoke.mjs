@@ -48,6 +48,7 @@ try {
   assert.ok(html.includes("__XANDA_DEV__"), "El HTML servido debe exponer el estado del cliente de desarrollo.");
   assert.ok(html.includes('"version":"1.0.0"'), "El HTML servido debe declarar la version estable del runtime dev.");
   assert.ok(html.includes('"protocolVersion":1'), "El HTML servido debe declarar la version del protocolo dev.");
+  assert.ok(html.includes('<link rel="stylesheet" href="./app.css">'), "El HTML servido debe enlazar el CSS compilado del ejemplo.");
   assert.ok(!html.includes('<script src="minimal.js"></script>'), "El host debe reemplazar la carga directa del bundle en modo desarrollo.");
   console.log("OK");
 } finally {

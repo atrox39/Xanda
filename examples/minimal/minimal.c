@@ -1,70 +1,116 @@
-#include "xanda/xanda.h"
+#include "minimal.h"
 
-static XandaApp g_app;
-static XandaComponent g_component;
-
-static XandaNode *minimal_render(XandaComponent *component)
+typedef struct
 {
-  XandaAttribute root_attrs[] = {
-      {"style", "font-family: sans-serif; padding: 24px; line-height: 1.5;"}};
-  XandaNode *root;
+  XandaComponent component;
+} MinimalFeature;
+
+static MinimalFeature g_minimal_feature = {0};
+
+static XandaNode *minimal_render_view(XandaComponent *component)
+{
+  XandaAttribute shell_attrs[] = {
+      {"class", "app-shell"}};
+  XandaAttribute container_attrs[] = {
+      {"class", "app-container stack stack--lg"}};
+  XandaAttribute hero_attrs[] = {
+      {"class", "surface-card stack stack--md"}};
+  XandaAttribute eyebrow_attrs[] = {
+      {"class", "eyebrow"}};
+  XandaAttribute title_attrs[] = {
+      {"class", "hero-title"}};
+  XandaAttribute description_attrs[] = {
+      {"class", "hero-copy"}};
+  XandaNode *shell;
+  XandaNode *container;
+  XandaNode *hero;
+  XandaNode *eyebrow;
   XandaNode *title;
+  XandaNode *description;
 
   (void)component;
 
-  root = xanda_create("main");
+  shell = xanda_create("main");
+  container = xanda_create("section");
+  hero = xanda_create("article");
+  eyebrow = xanda_create_with_text("span", "Plantilla base");
   title = xanda_create_with_text("h1", "Hola desde Xanda");
-  if (!root || !title)
+  description = xanda_create_with_text("p", "Proyecto minimo con entry point, bootstrap y estilos escalables listos para crecer.");
+  if (!shell || !container || !hero || !eyebrow || !title || !description)
   {
-    xanda_free(root);
+    xanda_free(shell);
+    xanda_free(container);
+    xanda_free(hero);
+    xanda_free(eyebrow);
     xanda_free(title);
+    xanda_free(description);
     return NULL;
   }
 
-  if (xanda_attrs(root, root_attrs, sizeof(root_attrs) / sizeof(root_attrs[0])) != XANDA_STATUS_OK)
+  if (xanda_attrs(shell, shell_attrs, sizeof(shell_attrs) / sizeof(shell_attrs[0])) != XANDA_STATUS_OK ||
+      xanda_attrs(container, container_attrs, sizeof(container_attrs) / sizeof(container_attrs[0])) != XANDA_STATUS_OK ||
+      xanda_attrs(hero, hero_attrs, sizeof(hero_attrs) / sizeof(hero_attrs[0])) != XANDA_STATUS_OK ||
+      xanda_attrs(eyebrow, eyebrow_attrs, sizeof(eyebrow_attrs) / sizeof(eyebrow_attrs[0])) != XANDA_STATUS_OK ||
+      xanda_attrs(title, title_attrs, sizeof(title_attrs) / sizeof(title_attrs[0])) != XANDA_STATUS_OK ||
+      xanda_attrs(description, description_attrs, sizeof(description_attrs) / sizeof(description_attrs[0])) != XANDA_STATUS_OK)
   {
-    xanda_free(root);
+    xanda_free(shell);
+    xanda_free(container);
+    xanda_free(hero);
+    xanda_free(eyebrow);
     xanda_free(title);
+    xanda_free(description);
     return NULL;
   }
 
-  xanda_append(root, title);
-  if (xanda_last_status() != XANDA_STATUS_OK || xanda_append_text(root, "Render con configuracion por defecto y sin boilerplate extra.") != XANDA_STATUS_OK)
+  xanda_append(hero, eyebrow);
+  xanda_append(hero, title);
+  xanda_append(hero, description);
+  xanda_append(container, hero);
+  xanda_append(shell, container);
+  if (xanda_last_status() != XANDA_STATUS_OK)
   {
-    xanda_free(root);
+    xanda_free(shell);
     return NULL;
   }
 
-  if (xanda_set_key(root, "minimal-root") != XANDA_STATUS_OK)
+  if (xanda_set_key(shell, "minimal-root") != XANDA_STATUS_OK)
   {
-    xanda_free(root);
+    xanda_free(shell);
     return NULL;
   }
 
-  return root;
+  return shell;
 }
 
-int main(void)
+static const XandaComponentDefinition MINIMAL_COMPONENT = {
+    "minimal",
+    0,
+    0,
+    NULL,
+    minimal_render_view,
+    NULL,
+    NULL,
+    NULL,
+    NULL};
+
+XandaStatus minimal_feature_init(XandaApp *app)
 {
-  XandaComponentDefinition definition = {
-      "minimal",
-      0,
-      0,
-      NULL,
-      minimal_render,
+  return xanda_component_init(
+      &g_minimal_feature.component,
+      app,
+      &MINIMAL_COMPONENT,
       NULL,
       NULL,
-      NULL,
-      NULL};
+      NULL);
+}
 
-  if (xanda_app_init(&g_app, NULL) != XANDA_STATUS_OK)
-    return 1;
+XandaStatus minimal_feature_restore_pending(void)
+{
+  return xanda_dev_restore_pending_component(&g_minimal_feature.component);
+}
 
-  if (xanda_component_init(&g_component, &g_app, &definition, NULL, NULL, NULL) != XANDA_STATUS_OK)
-    return 1;
-
-  if (xanda_dev_restore_pending_component(&g_component) != XANDA_STATUS_OK)
-    return 1;
-
-  return xanda_component_mount(&g_component) == XANDA_STATUS_OK ? 0 : 1;
+XandaStatus minimal_feature_mount(void)
+{
+  return xanda_component_mount(&g_minimal_feature.component);
 }

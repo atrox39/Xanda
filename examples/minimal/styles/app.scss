@@ -1,0 +1,6 @@
+@use "../../shared/styles/xanda";
+@use "./tokens";
+
+:root[data-app="minimal"] .surface-card {
+  max-width: 52rem;
+}

@@ -5,6 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "node src/server.mjs",
-    "smoke": "node ../../tests/browser/dev-server-smoke.mjs"
+    "smoke": "node ../../tests/browser/dev-server-smoke.mjs",
+    "build:assets": "node src/build-assets.mjs build",
+    "build:dist": "node src/build-assets.mjs dist"
+  },
+  "devDependencies": {
+    "sass": "^1.93.2"
   }
 }

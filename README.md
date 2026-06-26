@@ -217,107 +217,140 @@ Ejemplos de mensajes concretos:
 
 ### Minimal
 
-Caso base sin eventos y usando defaults:
+`examples/minimal/` es la plantilla base recomendada para iniciar un proyecto nuevo.
 
-```c
-static XandaApp g_app;
-static XandaComponent g_component;
+Su estructura objetivo es:
 
-static XandaNode *minimal_render(XandaComponent *component)
-{
-  XandaNode *root = xanda_create("main");
-  XandaNode *title = xanda_create_with_text("h1", "Hola desde Xanda");
-
-  (void)component;
-
-  xanda_append(root, title);
-  xanda_append_text(root, "Render con configuracion por defecto.");
-  xanda_set_key(root, "minimal-root");
-  return root;
-}
+```text
+examples/minimal/
+|-- index.html
+|-- main.c
+|-- bootstrap.c
+|-- bootstrap.h
+|-- minimal.c
+|-- minimal.h
+`-- styles/
+    |-- app.scss
+    `-- _tokens.scss
 ```
+
+Responsabilidades:
+
+- `index.html`: shell HTML y carga de `app.css` + `minimal.js`.
+- `main.c`: entry point minimo de la app.
+- `bootstrap.c`: inicializacion de `XandaApp`, handler de errores y arranque.
+- `minimal.c`: componente o feature principal.
+- `styles/app.scss`: entrypoint local de estilos del proyecto.
+- `styles/_tokens.scss`: overrides locales de tema.
 
 ### Counter
 
-Caso interactivo organizado en dos archivos y usando el nuevo modelo de componente:
+`examples/counter/` usa la misma arquitectura base, pero muestra un caso con estado, eventos y rerender.
 
-- `examples/counter/main.c`: punto de entrada, inicializacion y primer montaje.
-- `examples/counter/counter.c`: definicion del componente, estado del contador y rerender.
+Responsabilidades:
 
-El componente queda definido con identidad estable:
+- `main.c`: orquesta `counter_bootstrap_init()` y `counter_bootstrap_run()`.
+- `bootstrap.c`: prepara el runtime y la feature.
+- `counter.c`: encapsula estado, render y binding de eventos.
+- `styles/`: personalizacion visual local sobre la base compartida.
 
-```c
-static const XandaComponentDefinition COUNTER_COMPONENT = {
-  "counter",
-  1,
-  sizeof(CounterState),
-  NULL,
-  counter_render,
-  counter_bind,
-  NULL,
-  NULL,
-  NULL
-};
+## Arquitectura base para nuevos proyectos
 
-XandaStatus counter_init(XandaApp *app)
-{
-  return xanda_component_init(
-      &g_counter.component,
-      app,
-      &COUNTER_COMPONENT,
-      &g_counter.state,
-      NULL,
-      NULL);
-}
+La base obligatoria para nuevos proyectos en Xanda queda definida asi:
+
+```text
+examples/<app>/
+|-- index.html
+|-- main.c
+|-- bootstrap.c
+|-- bootstrap.h
+|-- <feature>.c
+|-- <feature>.h
+|-- styles/
+|   |-- app.scss
+|   `-- _tokens.scss
+`-- assets/
 ```
+
+Y la capa compartida de estilos vive en:
+
+```text
+examples/shared/styles/
+|-- xanda.scss
+|-- _variables.scss
+|-- _reset.scss
+|-- _base.scss
+|-- _utilities.scss
+`-- _components.scss
+```
+
+Reglas de diseño:
+
+- `main.c` debe mantenerse ligero y actuar solo como entry point.
+- `bootstrap.c` centraliza setup, configuracion y arranque.
+- el modulo del feature concentra render, estado y eventos.
+- `styles/app.scss` importa la base compartida y aplica overrides locales.
+- nuevos modulos o recursos deben agregarse sin modificar la estructura base.
 
 ## Crear un proyecto desde un ejemplo
 
-La forma mas simple de empezar hoy con Xanda es usar uno de los ejemplos incluidos como base:
+La forma mas simple de empezar hoy con Xanda es partir desde `examples/minimal/`.
 
-- `examples/minimal/`: punto de partida mas pequeno para una app sin eventos complejos.
-- `examples/counter/`: punto de partida recomendado si quieres estado, eventos y una estructura modular con `main.c`.
+### Flujo recomendado
 
-### Opcion 1: reutilizar un ejemplo existente
+1. Copia `examples/minimal/` a `examples/<tu-app>/`.
+2. Renombra `minimal.c` y `minimal.h` al nombre de tu feature o modulo principal.
+3. Ajusta `bootstrap.c` para inicializar tu modulo.
+4. Actualiza `index.html` con el titulo y `data-app` de tu proyecto.
+5. Personaliza `styles/_tokens.scss` y `styles/app.scss`.
+6. Registra tu nuevo ejemplo en `Makefile`.
 
-Si quieres iterar rapidamente, puedes trabajar directamente sobre `counter` o `minimal`:
-
-1. Copia la carpeta del ejemplo que mas se acerque a tu caso.
-2. Renombra el contenido visual, estado y callbacks de ese ejemplo.
-3. Mantiene el `index.html` como shell de la app.
-4. Compila con el target correspondiente del `Makefile`.
-
-Ejemplo de trabajo sobre `counter`:
+Ejemplo de proyecto nuevo:
 
 ```text
-examples/
-`-- counter/
-    |-- index.html
-    |-- main.c
-    |-- counter.c
-    `-- counter.h
+examples/dashboard/
+|-- index.html
+|-- main.c
+|-- bootstrap.c
+|-- bootstrap.h
+|-- dashboard.c
+|-- dashboard.h
+|-- styles/
+|   |-- app.scss
+|   `-- _tokens.scss
+`-- assets/
 ```
 
-En ese flujo, `main.c` actua como entry point de tu app y `counter.c` concentra la logica del componente principal.
+Si necesitas un ejemplo con estado y eventos desde el inicio, puedes partir de `examples/counter/`.
 
-### Opcion 2: crear un ejemplo nuevo a partir de uno existente
+## Estilos y personalizacion
 
-Si quieres una app con otro nombre, hoy el flujo recomendado es:
+Xanda usa ahora una base compartida + local:
 
-1. Copiar `examples/minimal/` o `examples/counter/` a `examples/<tu-app>/`.
-2. Ajustar los nombres de archivos `.c` y `.h` segun tu proyecto.
-3. Actualizar `examples/<tu-app>/index.html` para que apunte al script generado de tu app.
-4. Registrar el nuevo ejemplo en `Makefile`.
+- `examples/shared/styles/`: tokens y componentes reutilizables del starter.
+- `examples/<app>/styles/_tokens.scss`: overrides por proyecto.
+- `examples/<app>/styles/app.scss`: entrada local de estilos.
 
-Notas importantes sobre el `Makefile` actual:
+La personalizacion debe hacerse mediante variables y clases reutilizables, no con atributos `style` hardcodeados en C.
 
-- `EXAMPLES := counter minimal` define los ejemplos oficiales compilables por defecto.
-- Cada ejemplo genera una salida en `build/<ejemplo>/`.
-- Si agregas una app nueva, debes extender el `Makefile` con un target/export apropiado siguiendo el patron existente para `counter` y `minimal`.
+Ejemplos de clases base:
 
-Si no quieres tocar el `Makefile`, la via mas directa es reutilizar `counter` o `minimal` como base de tu proyecto real.
+- `app-shell`
+- `app-container`
+- `stack`
+- `surface-card`
+- `button`
+- `button--primary`
 
 ## Compilacion
+
+Instala primero las dependencias del tooling:
+
+```bash
+make dev-setup
+```
+
+Eso instala Sass en `tools/dev-server/` usando `pnpm`.
 
 Compila ambos ejemplos web:
 
@@ -332,6 +365,20 @@ make counter
 make minimal
 ```
 
+Genera el bundle final de produccion:
+
+```bash
+make dist-counter
+make dist-minimal
+```
+
+O de forma parametrica:
+
+```bash
+make dist EXAMPLE=counter
+make dist EXAMPLE=minimal
+```
+
 Ejecuta pruebas unitarias nativas:
 
 ```bash
@@ -341,81 +388,68 @@ make test
 En Windows, si usas `mingw32-make`:
 
 ```bash
+mingw32-make dev-setup
 mingw32-make
+mingw32-make dist EXAMPLE=counter
 mingw32-make test
 ```
 
-## Bundle de produccion
+## Build y dist
 
-Cuando ejecutas:
+Xanda ahora maneja dos niveles de salida:
 
-```bash
-make counter
-```
+- `build/<ejemplo>/`: salida tecnica del proceso de compilacion.
+- `dist/<ejemplo>/`: bundle final listo para despliegue.
 
-o:
+### Contenido de `build/<ejemplo>/`
 
-```bash
-make minimal
-```
-
-Xanda genera un artefacto estatico listo para despliegue en:
-
-- `build/counter/`
-- `build/minimal/`
-
-Ese directorio funciona como el equivalente practico a un `dist/` o `bundle/` final, parecido al resultado de una compilacion de Vite: contiene el `index.html` y los artefactos web necesarios para publicar la app.
-
-Ejemplo de salida para `counter`:
+Ejemplo para `counter`:
 
 ```text
-build/
-`-- counter/
-    |-- index.html
-    |-- counter.js
-    `-- counter.wasm
+build/counter/
+|-- app.css
+|-- counter.js
+|-- counter.wasm
+|-- index.html
+`-- assets/
+```
+
+### Contenido de `dist/<ejemplo>/`
+
+`dist/<ejemplo>/` copia el artefacto final publicable y es el equivalente real al resultado tipo Vite para este stack.
+
+Ejemplo:
+
+```text
+dist/counter/
+|-- app.css
+|-- counter.js
+|-- counter.wasm
+|-- index.html
+`-- assets/
 ```
 
 Que contiene cada archivo:
 
-- `index.html`: documento listo para servirse en produccion.
-- `counter.js`: loader y runtime generado por Emscripten.
-- `counter.wasm`: modulo WebAssembly de la app.
-
-En otras palabras, para produccion no necesitas recompilar en el servidor ni montar tooling adicional: basta con publicar el contenido de `build/<ejemplo>/`.
-
-### Publicar como `dist`
-
-Si en tu pipeline prefieres trabajar con una carpeta llamada `dist/`, puedes copiar la salida final:
-
-```bash
-mkdir -p dist
-cp -r build/counter/* dist/
-```
-
-En Windows PowerShell:
-
-```powershell
-New-Item -ItemType Directory -Force dist | Out-Null
-Copy-Item build/counter/* dist/ -Recurse -Force
-```
-
-El contenido de `dist/` sera el bundle final desplegable.
+- `index.html`: shell final de la app.
+- `app.css`: estilos compilados desde Sass.
+- `<ejemplo>.js`: loader y runtime generado por Emscripten.
+- `<ejemplo>.wasm`: modulo WebAssembly de la app.
+- `assets/`: recursos locales del proyecto, si existen.
 
 ## Desarrollo
 
 El servidor de desarrollo en `tools/dev-server/` ya opera sobre un host separado del bundle compilado y actualmente ofrece:
 
-- rebuild automatico al cambiar `src/`, `include/`, `examples/<ejemplo>/` o `Makefile`;
+- rebuild automatico al cambiar `src/`, `include/`, `examples/<ejemplo>/`, `styles/` o `Makefile`;
 - hot swap visual del modulo por WebSocket, sin `window.location.reload()` cuando el host dev puede reemplazar la instancia;
 - overlay simple cuando la compilacion falla;
 - snapshot textual del componente raiz antes del reload;
 - restauracion automatica del estado al arrancar la nueva instancia del modulo si la version del snapshot sigue siendo compatible;
 - registro formal de boundaries del runtime para que el host pueda inspeccionar el componente raiz activo;
 - comparacion explicita del boundary raiz antes de aceptar el swap del modulo;
-- inyeccion automatica del cliente de desarrollo en los HTML servidos, sin modificar los `index.html` de los ejemplos;
-- separacion entre host dev y bundle compilado: en modo `DEV=1` el HTML servido ya no ejecuta `counter.js` o `minimal.js` directamente;
-- cero dependencias externas del lado del servidor: basta con Node.js.
+- soporte para recompilar Sass y volver a servir `app.css`;
+- inyeccion automatica del cliente de desarrollo en los HTML servidos, sin modificar los `index.html` de los ejemplos.
 
 Preparacion inicial:
 
@@ -434,8 +468,6 @@ Flujo para `minimal`:
 ```bash
 make dev-minimal
 ```
-
-Esto levanta un servidor en `http://127.0.0.1:5173/<ejemplo>/`.
 
 Tambien puedes elegir ejemplo y puerto:
 
@@ -459,49 +491,33 @@ make release-check
 Troubleshooting rapido:
 
 - Si `make dev` falla por dependencias faltantes, ejecuta `make dev-setup`.
-- `make dev-setup` solo verifica que Node.js este disponible; no instala paquetes.
+- `make dev-setup` instala Sass en `tools/dev-server/`.
 - Si `emcc` no esta en `PATH`, el `Makefile` intentara usar `C:/emsdk/upstream/emscripten/emcc.bat`.
 - Si el host no logra hacer swap en caliente, el cliente hara fallback a recarga completa de la pagina.
-- Si el navegador no actualiza, revisa la consola y confirma que `__xanda_dev_host.js` y `__xanda_dev_client.js` se sirven desde el dev server.
+- Si el navegador no actualiza, revisa la consola y confirma que `__xanda_dev_host.js`, `__xanda_dev_client.js` y `app.css` se sirven desde el dev server.
 - Si el estado no se restaura tras recompilar, revisa que `state_version` y `state_size` del componente sigan siendo compatibles con el snapshot previo.
 - Si el swap falla aunque exista snapshot, revisa tambien que el `name` y la `key` estable del boundary raiz no hayan cambiado entre compilaciones.
 
-Artefactos generados:
-
-- `build/counter/counter.js`
-- `build/counter/counter.wasm`
-- `build/counter/index.html`
-- `build/minimal/minimal.js`
-- `build/minimal/minimal.wasm`
-- `build/minimal/index.html`
-- `build/tests/test_xanda.exe`
-
 ## Servir el bundle en produccion
 
-Para produccion, piensa en `build/<ejemplo>/` como tu carpeta publicable.
+Para produccion, toma `dist/<ejemplo>/` como el bundle final publicable.
 
-Flujo tipico:
-
-1. Compila el ejemplo o app base.
-2. Toma `build/<ejemplo>/` como artefacto final.
-3. Copia ese contenido al directorio servido por tu web server o CDN.
-
-Ejemplo con `counter`:
+Ejemplo:
 
 ```bash
-make counter
+make dist-counter
 ```
 
-La carpeta final a desplegar es:
+La carpeta final a desplegar sera:
 
 ```text
-build/counter/
+dist/counter/
 ```
 
 Si quieres probarla localmente como sitio estatico:
 
 ```bash
-cd build/counter
+cd dist/counter
 python -m http.server 8000
 ```
 
@@ -513,9 +529,9 @@ http://localhost:8000/
 
 ## Despliegue con Nginx
 
-Un despliegue de produccion con Nginx puede servir directamente el bundle generado.
+Un despliegue de produccion con Nginx puede servir directamente `dist/<ejemplo>/`.
 
-Supongamos que copiaste `build/counter/` a:
+Supongamos que copiaste `dist/counter/` a:
 
 ```text
 /var/www/xanda-counter
@@ -540,7 +556,7 @@ server {
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
-    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico)$ {
+    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|webp)$ {
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
 }
@@ -548,14 +564,15 @@ server {
 
 Puntos importantes para Nginx:
 
-- `root` debe apuntar al directorio final del bundle, por ejemplo `build/counter/` ya copiado a tu servidor.
+- `root` debe apuntar al directorio final del bundle, por ejemplo `dist/counter/`.
 - `index index.html;` permite servir el shell de la app.
 - `application/wasm` asegura que el navegador cargue correctamente el modulo WebAssembly.
+- `app.css` ya forma parte del bundle final y no requiere pipeline adicional en el servidor.
 - `try_files` ayuda si luego evolucionas a rutas que necesiten volver a `index.html`.
 
 ## Ejecutar los ejemplos en local
 
-Despues de compilar, sirve `build/` con un servidor estatico:
+Despues de compilar, puedes servir `build/` como salida tecnica:
 
 ```bash
 cd build
@@ -590,6 +607,9 @@ make all
 make examples
 make counter
 make minimal
+make dist EXAMPLE=counter
+make dist-counter
+make dist-minimal
 make test
 make test-browser
 make dev-setup

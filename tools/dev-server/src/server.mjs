@@ -163,6 +163,14 @@ function watchPath(targetPath, recursive) {
       changed.endsWith(".c") ||
       changed.endsWith(".h") ||
       changed.endsWith(".html") ||
+      changed.endsWith(".scss") ||
+      changed.endsWith(".css") ||
+      changed.endsWith(".png") ||
+      changed.endsWith(".jpg") ||
+      changed.endsWith(".jpeg") ||
+      changed.endsWith(".svg") ||
+      changed.endsWith(".webp") ||
+      changed.endsWith(".ico") ||
       changed.endsWith(".md") ||
       changed.endsWith("Makefile") ||
       targetPath.endsWith("Makefile")

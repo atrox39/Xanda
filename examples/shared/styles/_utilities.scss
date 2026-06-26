@@ -1,0 +1,22 @@
+.app-shell {
+  min-height: 100vh;
+  padding: var(--xanda-space-7) var(--xanda-space-4);
+}
+
+.app-container {
+  width: min(100%, var(--xanda-container-width));
+  margin: 0 auto;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack--md {
+  gap: var(--xanda-space-4);
+}
+
+.stack--lg {
+  gap: var(--xanda-space-6);
+}

@@ -12,6 +12,7 @@ NULL_DEVICE := /dev/null
 EMCC ?= $(EMCC_DEFAULT)
 CC ?= cc
 NODE ?= $(NODE_DEFAULT)
+PNPM ?= pnpm
 MAKE_BIN ?= make
 DEV ?= 0
 EXAMPLE ?= counter
@@ -19,8 +20,10 @@ XANDA_VERSION ?= 1.0.0
 XANDA_DEV_PROTOCOL ?= 1
 DEV_SERVER_DIR := tools/dev-server
 DEV_SERVER_PORT ?= 5173
+STYLE_BUILD_SCRIPT := $(DEV_SERVER_DIR)/src/build-assets.mjs
 
 BUILD_DIR := build
+DIST_DIR := dist
 TEST_BUILD_DIR := $(BUILD_DIR)/tests
 CORE_SOURCES := src/xanda.c src/xanda_runtime.c src/xanda_state.c src/xanda_component_runtime.c src/xanda_dev_runtime.c src/xanda_js_bridge.c
 PUBLIC_HEADERS := include/xanda/xanda.h src/xanda_internal.h
@@ -54,7 +57,7 @@ define REMOVE_DIR
 $(if $(filter Windows_NT,$(OS)),powershell -NoProfile -Command "if (Test-Path '$(subst /,\,$1)') { Remove-Item '$(subst /,\,$1)' -Recurse -Force }",rm -rf '$1')
 endef
 
-.PHONY: all examples counter minimal test test-browser clean rebuild help check-emcc check-node check-devtools dev-setup serve watch dev dev-counter dev-minimal version release-check
+.PHONY: all examples counter minimal assets-counter assets-minimal dist dist-counter dist-minimal test test-browser clean rebuild help check-emcc check-node check-pnpm check-devtools check-style-tools dev-setup serve watch dev dev-counter dev-minimal version release-check
 
 all: examples
 
@@ -70,13 +73,18 @@ define EXAMPLE_RULES
 $(BUILD_DIR)/$(1): | $(BUILD_DIR)
 	$(call MKDIR_P,$(BUILD_DIR)/$(1))
 
+assets-$(1): check-style-tools examples/$(1)/index.html $(wildcard examples/$(1)/styles/*.scss) $(wildcard examples/shared/styles/*.scss) $(wildcard examples/$(1)/assets/*) | $(BUILD_DIR)/$(1)
+	$(NODE) $(STYLE_BUILD_SCRIPT) build $(1)
+
 $(BUILD_DIR)/$(1)/$(1).js: check-emcc $(CORE_SOURCES) $(wildcard examples/$(1)/*.c) $(wildcard examples/$(1)/*.h) $(PUBLIC_HEADERS) | $(BUILD_DIR)/$(1)
 	$(EMCC) $(ACTIVE_EMCC_FLAGS) $(2) $(CORE_SOURCES) $(wildcard examples/$(1)/*.c) -o $$@
 
-$(BUILD_DIR)/$(1)/index.html: examples/$(1)/index.html | $(BUILD_DIR)/$(1)
-	$(call COPY_FILE,examples/$(1)/index.html,$$@)
+$(DIST_DIR)/$(1)/index.html: $(1)
+	$(NODE) $(STYLE_BUILD_SCRIPT) dist $(1)
 
-$(1): $(BUILD_DIR)/$(1)/$(1).js $(BUILD_DIR)/$(1)/index.html
+$(1): assets-$(1) $(BUILD_DIR)/$(1)/$(1).js
+
+dist-$(1): $(DIST_DIR)/$(1)/index.html
 endef
 
 $(eval $(call EXAMPLE_RULES,counter,$(COUNTER_EXPORTS)))
@@ -96,14 +104,28 @@ check-node:
 		exit 127; \
 	)
 
+check-pnpm:
+	@"$(PNPM)" --version > $(NULL_DEVICE) 2>&1 || ( \
+		echo "No se pudo ejecutar PNPM='$(PNPM)'."; \
+		echo "Instala pnpm o ejecuta make PNPM=<ruta-a-pnpm> dev-setup"; \
+		exit 127; \
+	)
+
 check-devtools: check-node
 	@[ -f "$(DEV_SERVER_DIR)/src/server.mjs" ] || ( \
 		echo "No se encontro $(DEV_SERVER_DIR)/src/server.mjs."; \
 		exit 127; \
 	)
 
-dev-setup: check-node
-	@echo "No se requieren dependencias externas. El dev server usa solo Node.js."
+check-style-tools: check-devtools
+	@[ -f "$(DEV_SERVER_DIR)/node_modules/sass/package.json" ] || ( \
+		echo "No se encontro la dependencia Sass."; \
+		echo "Ejecuta make dev-setup para instalar las dependencias del tooling."; \
+		exit 127; \
+	)
+
+dev-setup: check-node check-pnpm
+	cd "$(DEV_SERVER_DIR)" && ("$(PNPM)" install || ([ -f "node_modules/sass/package.json" ] && echo "Sass ya esta disponible; pnpm reporto builds ignorados del entorno."))
 
 $(TEST_BIN): $(TEST_SOURCES) $(PUBLIC_HEADERS) | $(TEST_BUILD_DIR)
 	$(CC) $(TEST_CFLAGS) $(TEST_SOURCES) -o $(TEST_BIN)
@@ -127,8 +149,11 @@ dev-counter:
 dev-minimal:
 	$(MAKE) serve EXAMPLE=minimal DEV=1
 
+dist: dist-$(EXAMPLE)
+
 clean:
 	$(call REMOVE_DIR,$(BUILD_DIR))
+	$(call REMOVE_DIR,$(DIST_DIR))
 
 rebuild:
 	$(MAKE) clean
@@ -138,10 +163,13 @@ version:
 	@echo $(XANDA_VERSION)
 
 release-check:
+	$(MAKE) dev-setup
 	$(MAKE) test
 	$(MAKE) test-browser
 	$(MAKE) -n counter DEV=1
 	$(MAKE) -n minimal DEV=1
+	$(MAKE) dist-counter
+	$(MAKE) dist-minimal
 
 help:
 	@echo Targets disponibles:
@@ -149,9 +177,12 @@ help:
 	@echo   make examples  - Compila counter y minimal
 	@echo   make counter   - Compila el ejemplo interactivo counter
 	@echo   make minimal   - Compila el ejemplo minimo con defaults
+	@echo   make dist EXAMPLE=counter - Genera el bundle final en dist/<ejemplo>
+	@echo   make dist-counter - Genera el bundle final del ejemplo counter
+	@echo   make dist-minimal - Genera el bundle final del ejemplo minimal
 	@echo   make test      - Compila y ejecuta pruebas unitarias nativas
 	@echo   make test-browser - Ejecuta el smoke test del servidor de desarrollo
-	@echo   make dev-setup - Verifica que Node.js este disponible
+	@echo   make dev-setup - Instala dependencias del tooling (Sass) con pnpm
 	@echo   make dev       - Levanta el modo desarrollo para counter
 	@echo   make dev-counter - Igual que dev
 	@echo   make dev-minimal - Levanta el modo desarrollo para minimal
@@ -159,6 +190,6 @@ help:
 	@echo   make release-check - Ejecuta pruebas y validaciones base de la release
 	@echo   make serve EXAMPLE=counter DEV=1 - Inicia el dev server con recompilacion automatica
 	@echo   make watch EXAMPLE=counter DEV=1 - Alias de serve
-	@echo   make clean     - Elimina build/
+	@echo   make clean     - Elimina build/ y dist/
 	@echo   make rebuild   - Limpia y recompila los ejemplos
 	@echo   Override EMCC  - make EMCC=C:/emsdk/upstream/emscripten/emcc.bat

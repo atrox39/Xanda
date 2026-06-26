@@ -1,0 +1,40 @@
+@use "./variables" as *;
+
+:root {
+  --xanda-font-sans: #{$font-sans};
+  --xanda-font-mono: #{$font-mono};
+  --xanda-color-surface: #{$color-surface};
+  --xanda-color-surface-alt: #{$color-surface-alt};
+  --xanda-color-card: #{$color-card};
+  --xanda-color-border: #{$color-border};
+  --xanda-color-text: #{$color-text};
+  --xanda-color-text-muted: #{$color-text-muted};
+  --xanda-color-primary: #{$color-primary};
+  --xanda-color-primary-strong: #{$color-primary-strong};
+  --xanda-color-accent: #{$color-accent};
+  --xanda-radius-sm: #{$radius-sm};
+  --xanda-radius-md: #{$radius-md};
+  --xanda-radius-lg: #{$radius-lg};
+  --xanda-space-1: #{$space-1};
+  --xanda-space-2: #{$space-2};
+  --xanda-space-3: #{$space-3};
+  --xanda-space-4: #{$space-4};
+  --xanda-space-5: #{$space-5};
+  --xanda-space-6: #{$space-6};
+  --xanda-space-7: #{$space-7};
+  --xanda-container-width: #{$container-width};
+  --xanda-shadow-lg: #{$shadow-lg};
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--xanda-font-sans);
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.24), transparent 35%),
+    linear-gradient(180deg, var(--xanda-color-surface), var(--xanda-color-surface-alt));
+  color: var(--xanda-color-text);
+}
+
+a {
+  color: inherit;
+}

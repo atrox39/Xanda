@@ -8,3 +8,7 @@
 - Fija la version del protocolo dev mediante `XANDA_DEV_PROTOCOL_VERSION` y `xanda_dev_protocol_version()`.
 - Agrega el target `make release-check` para validar la release localmente.
 - Endurece el `Makefile` para funcionar mejor en Windows y Unix.
+- Introduce la arquitectura base `index.html + main.c + bootstrap.c + feature` para los ejemplos canonicos.
+- Agrega una base de estilos compartida con Sass real, tokens centralizados y overrides locales por proyecto.
+- Elimina estilos inline en `minimal` y `counter` a favor de clases reutilizables.
+- Agrega build de `app.css`, copia de assets y salida formal `dist/<ejemplo>/` lista para produccion.
